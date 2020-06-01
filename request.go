@@ -153,12 +153,26 @@ func unmarshalNode(data *Node, model reflect.Value, included *map[string]*Node) 
 
 	for i := 0; i < modelValue.NumField(); i++ {
 		fieldType := modelType.Field(i)
+		fieldValue := modelValue.Field(i)
 		tag := fieldType.Tag.Get("jsonapi")
 		if tag == "" {
-			continue
-		}
+			switch fieldType.Type.Kind() {
+			case reflect.Struct:
+				structData := &Node{
+					Type:       fieldType.Name,
+					Attributes: data.Attributes}
+				structModel := reflect.New(fieldType.Type)
+				err := unmarshalNode(structData, structModel, nil)
+				if err != nil {
+					return err
+				}
+				assign(fieldValue, structModel)
+				continue
 
-		fieldValue := modelValue.Field(i)
+			default:
+				continue
+			}
+		}
 
 		args := strings.Split(tag, ",")
 		if len(args) < 1 {
