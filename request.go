@@ -153,6 +153,15 @@ func unmarshalNode(data *Node, model reflect.Value, included *map[string]*Node) 
 
 	for i := 0; i < modelValue.NumField(); i++ {
 		fieldType := modelType.Field(i)
+
+		// Detect if we're dealing with an anonymous struct which we need to recurse into
+		if fieldType.Anonymous {
+			err := unmarshalNode(data, modelValue.Field(i).Addr(), included)
+			if err != nil {
+				return err
+			}
+		}
+
 		tag := fieldType.Tag.Get("jsonapi")
 		if tag == "" {
 			continue
