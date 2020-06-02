@@ -383,7 +383,6 @@ func assignValue(field, value reflect.Value) {
 	case reflect.Bool:
 		field.SetBool(value.Bool())
 	case reflect.Slice:
-		fmt.Println(field.Type())
 		newSlice := reflect.MakeSlice(field.Type(), value.Len(), value.Cap())
 		for i := 0; i < value.Len(); i++ {
 			if value.Index(i).Kind() == reflect.Interface {
