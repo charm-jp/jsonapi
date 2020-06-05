@@ -10,7 +10,7 @@ type Payloader interface {
 //
 type PolymorphicOwner struct {
 	Type string `json:"type"`
-	ID   string `json:"id"`
+	ID   string `jsonapi:"primary,owner" json:"id"`
 }
 
 // OnePayload is used to represent a generic JSON API payload where a single
