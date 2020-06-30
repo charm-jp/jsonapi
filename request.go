@@ -265,6 +265,33 @@ func unmarshalNode(data *Node, model reflect.Value, included *map[string]*Node) 
 
 			assign(fieldValue, value)
 		} else if annotation == annotationRelation {
+
+			// Polymorphic relationships
+			isPolymorphicOwner := fieldValue.Type() == reflect.TypeOf(&PolymorphicOwner{})
+			if isPolymorphicOwner {
+
+				typ := data.Attributes[args[1]+"Type"]
+				if typ == nil {
+					typ = ""
+				}
+
+				id := data.Attributes[args[1]+"ID"]
+				if id == nil {
+					id = ""
+				}
+
+				i := map[string]interface{}{
+					"data": &PolymorphicOwner{
+						Type: typ.(string),
+						ID:   id.(string),
+					},
+				}
+				if data.Relationships == nil {
+					data.Relationships = map[string]interface{}{}
+				}
+				data.Relationships[args[1]] = i
+			}
+
 			isSlice := fieldValue.Type().Kind() == reflect.Slice
 
 			if data.Relationships == nil || data.Relationships[args[1]] == nil {
@@ -321,13 +348,23 @@ func unmarshalNode(data *Node, model reflect.Value, included *map[string]*Node) 
 				}
 
 				m := reflect.New(fieldValue.Type().Elem())
-				if err := unmarshalNode(
-					fullNode(relationship.Data, included),
-					m,
-					included,
-				); err != nil {
-					er = err
-					break
+
+				if isPolymorphicOwner {
+					// Polymorphic relationships
+					i := &PolymorphicOwner{
+						Type: relationship.Data.Type,
+						ID:   relationship.Data.ID,
+					}
+					m = reflect.ValueOf(&i).Elem()
+				} else {
+					if err := unmarshalNode(
+						fullNode(relationship.Data, included),
+						m,
+						included,
+					); err != nil {
+						er = err
+						break
+					}
 				}
 
 				fieldValue.Set(m)
