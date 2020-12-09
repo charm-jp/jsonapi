@@ -593,10 +593,33 @@ func handleMap(attribute interface{}, fieldType reflect.Type, fieldValue reflect
 			outValue = newValue
 		}
 
-		//fmt.Println(outValue.Type())
-		//fmt.Println(outValue.Interface())
+		// If the receiver map key is an int type, attempt to cast a string key from the JSON to int
+		switch models.Type().Key().Kind() {
+		case reflect.Int:
+			intValue, err := strconv.ParseInt(key.String(), 10, 64)
 
-		models.SetMapIndex(key, outValue)
+			if err != nil {
+				return reflect.Value{}, err
+			}
+
+			mapKey := reflect.New(models.Type().Key()).Elem()
+			mapKey.SetInt(intValue)
+
+			models.SetMapIndex(mapKey, outValue)
+		case reflect.Float64:
+			floatValue, err := strconv.ParseFloat(key.String(), 64)
+
+			if err != nil {
+				return reflect.Value{}, err
+			}
+
+			mapKey := reflect.New(models.Type().Key()).Elem()
+			mapKey.SetFloat(floatValue)
+
+			models.SetMapIndex(mapKey, outValue)
+		default:
+			models.SetMapIndex(key, outValue)
+		}
 	}
 
 	return models, nil
